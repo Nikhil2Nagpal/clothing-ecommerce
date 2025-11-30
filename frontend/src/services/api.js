@@ -3,23 +3,54 @@ import axios from 'axios'
 // Determine base URL based on environment
 const getBaseURL = () => {
   if (import.meta.env.VITE_API_URL) {
+    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL)
     return import.meta.env.VITE_API_URL
   }
   
   if (process.env.NODE_ENV === 'production') {
+    console.log('Using production fallback URL')
     // Update this to your actual backend URL when deployed
     return 'https://your-backend-url.com/api'
   }
   
+  console.log('Using localhost for development')
   // Default to localhost for development
   return 'http://localhost:3002/api'
 }
 
+// Log the base URL being used
+const baseURL = getBaseURL()
+console.log('API Base URL:', baseURL)
+
 // Create axios instance with base URL
 const apiClient = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: baseURL,
   withCredentials: true,
 })
+
+// Add request interceptor for debugging
+apiClient.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', config.method?.toUpperCase(), config.baseURL + config.url)
+    return config
+  },
+  (error) => {
+    console.error('API Request Error:', error)
+    return Promise.reject(error)
+  }
+)
+
+// Add response interceptor for debugging
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log('API Response:', response.status, response.config.url)
+    return response
+  },
+  (error) => {
+    console.error('API Response Error:', error.response?.status, error.response?.data || error.message)
+    return Promise.reject(error)
+  }
+)
 
 export const api = {
   // Product APIs
