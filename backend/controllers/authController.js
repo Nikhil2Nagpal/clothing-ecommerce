@@ -4,11 +4,19 @@ const bcrypt = require('bcryptjs');
 
 // Generate JWT token
 const generateToken = (id) => {
-  // Use process.env.JWT_SECRET or fallback to a default secret
-  const secret = process.env.JWT_SECRET || 'default_fallback_secret_for_development_only';
-  return jwt.sign({ id }, secret, {
-    expiresIn: '30d',
-  });
+  try {
+    // Use process.env.JWT_SECRET or fallback to a default secret
+    const secret = process.env.JWT_SECRET || 'default_fallback_secret_for_development_only';
+    if (!secret) {
+      throw new Error('JWT secret is not defined');
+    }
+    return jwt.sign({ id }, secret, {
+      expiresIn: '30d',
+    });
+  } catch (error) {
+    console.error('JWT token generation error:', error);
+    throw error;
+  }
 };
 
 // @desc    Register new user
@@ -41,16 +49,20 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
+      // Generate token
+      const token = generateToken(user._id);
+      
       res.status(201).json({
         _id: user.id,
         name: user.name,
         email: user.email,
-        token: generateToken(user._id),
+        token: token,
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -67,20 +79,28 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Please add all fields' });
     }
 
-    // Check for user email
-    const user = await User.findOne({ email });
+    // Check for user email (include password field)
+    const user = await User.findOne({ email }).select('+password');
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    if (await user.matchPassword(password)) {
+      // Generate token
+      const token = generateToken(user._id);
+      
       res.json({
         _id: user.id,
         name: user.name,
         email: user.email,
-        token: generateToken(user._id),
+        token: token,
       });
     } else {
       res.status(400).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: error.message });
   }
 };
