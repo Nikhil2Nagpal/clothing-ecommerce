@@ -1,8 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const path = require('path');
 const connectDB = require('./config/db');
 
 // Load env vars
@@ -15,32 +13,40 @@ const app = express();
 
 // Body parser middleware
 app.use(express.json());
-app.use(cookieParser());
+
+// Enable CORS for your frontend
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['https://clothing-ecommerce-000.vercel.app', 'http://localhost:5173'],
   credentials: true
 }));
 
-// Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/cart', require('./routes/cartRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
+// Route files
+const productRoutes = require('./routes/productRoutes');
+const authRoutes = require('./routes/authRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../frontend/dist')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../../frontend/dist', 'index.html'));
-  });
-} else {
-  app.get('/', (req, res) => {
-    res.json({ message: 'E-commerce API Running...' });
-  });
-}
+// Mount routers
+app.use('/api/products', productRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
-const PORT = process.env.PORT || 3002;
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ message: 'Server is running!', timestamp: new Date().toISOString() });
+});
+
+// Simple root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'E-commerce API Running...', 
+    version: '1.0.0',
+    documentation: 'Visit /api/health to check if server is running'
+  });
+});
+
+const PORT = process.env.PORT || 10000;
 
 const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
