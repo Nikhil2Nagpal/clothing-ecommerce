@@ -2,15 +2,25 @@ import axios from 'axios'
 
 // Determine base URL based on environment
 const getBaseURL = () => {
-  if (import.meta.env.VITE_API_URL) {
-    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL)
-    return import.meta.env.VITE_API_URL
+  // Check if we're in a browser environment
+  if (typeof window !== 'undefined' && window.location) {
+    // For Vercel production deployments
+    if (import.meta.env && import.meta.env.VITE_API_URL) {
+      console.log('Using VITE_API_URL from import.meta.env:', import.meta.env.VITE_API_URL)
+      return import.meta.env.VITE_API_URL
+    }
+    
+    // Check process.env (for compatibility)
+    if (process.env.VITE_API_URL) {
+      console.log('Using VITE_API_URL from process.env:', process.env.VITE_API_URL)
+      return process.env.VITE_API_URL
+    }
   }
   
   if (process.env.NODE_ENV === 'production') {
     console.log('Using production fallback URL')
     // Update this to your actual backend URL when deployed
-    return 'https://your-backend-url.com/api'
+    return 'https://clothing-ecommerce-backend-1tp3.onrender.com/api'
   }
   
   console.log('Using localhost for development')
@@ -20,7 +30,7 @@ const getBaseURL = () => {
 
 // Log the base URL being used
 const baseURL = getBaseURL()
-console.log('API Base URL:', baseURL)
+console.log('Final API Base URL:', baseURL)
 
 // Create axios instance with base URL
 const apiClient = axios.create({
