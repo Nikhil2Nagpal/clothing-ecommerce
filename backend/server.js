@@ -6,6 +6,12 @@ const connectDB = require('./config/db');
 // Load env vars
 dotenv.config();
 
+// Log environment variables for debugging (remove in production)
+console.log('Environment variables check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+console.log('MONGO_URI exists:', !!process.env.MONGO_URI);
+
 // Connect to database
 connectDB();
 
@@ -34,7 +40,12 @@ app.use('/api/orders', orderRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ message: 'Server is running!', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    message: 'Server is running!', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    jwtSecretConfigured: !!process.env.JWT_SECRET
+  });
 });
 
 // Simple root route
